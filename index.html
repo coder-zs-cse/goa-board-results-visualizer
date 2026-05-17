@@ -26,7 +26,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-f
 .app{display:flex;height:100vh}
 .map-col{flex:0 0 45%;position:relative;border-right:1px solid var(--b)}
 .data-col{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-@media(max-width:720px){.app{flex-direction:column}.map-col{flex:0 0 42vh;border-right:none;border-bottom:1px solid var(--b)}}
+/* panel handle hidden on desktop */
+.ph{display:none}
+@media(max-width:720px){
+  .app{display:block;position:relative}
+  .map-col{position:fixed;inset:0;z-index:1;border:none}
+  .data-col{
+    position:fixed;bottom:0;left:0;right:0;z-index:700;
+    height:62vh;border-radius:20px 20px 0 0;
+    background:var(--bg);border-top:1px solid var(--b2);
+    transition:transform .35s cubic-bezier(.32,.72,0,1);
+    transform:translateY(0)
+  }
+  .data-col.panel-collapsed{transform:translateY(calc(62vh - 90px))}
+  .ph{display:flex;flex-direction:column;align-items:center;padding:10px 18px 8px;cursor:pointer;user-select:none;flex-shrink:0;gap:4px}
+  .ph-bar{width:38px;height:4px;background:var(--b2);border-radius:2px;transition:background .15s}
+  .ph:hover .ph-bar{background:var(--ts)}
+  .ph-row{display:flex;align-items:center;justify-content:space-between;width:100%}
+  .ph-title{font-family:var(--disp);font-size:12px;font-weight:700;color:var(--th);letter-spacing:-.01em}
+  .ph-chevron{font-size:11px;color:var(--tm);transition:transform .3s;display:inline-block}
+  .data-col.panel-collapsed .ph-chevron{transform:rotate(180deg)}
+  /* hide desktop header on mobile — ph replaces it */
+  .hdr{display:none}
+  /* tighter filter bar on mobile */
+  .fbar{display:none}
+  /* content height fills remaining space */
+  .content{padding:10px 14px}
+  /* mode toggle closer to top-right */
+  .mode-toggle{top:10px;right:10px}
+  /* legend smaller on mobile */
+  .map-legend{bottom:100px;left:8px;padding:8px 10px}
+  /* popup narrower */
+  .spop{width:200px;right:8px;bottom:100px}
+  /* FAB sits just above collapsed panel strip */
+  .m-fab{bottom:100px}
+}
 
 /* ── Map ── */
 #map{width:100%;height:100%;background:#05080f}
@@ -286,7 +320,15 @@ tr.sel td{background:var(--acd)}
   </div>
 
   <!-- Data panel -->
-  <div class="data-col">
+  <div class="data-col" id="data-col">
+    <!-- Mobile panel handle — hidden on desktop via CSS -->
+    <div class="ph" id="ph" onclick="togglePanel()">
+      <div class="ph-bar"></div>
+      <div class="ph-row">
+        <span class="ph-title">Goa Board Results 2026 <button class="iBtn" id="i-btn-m" style="vertical-align:middle;margin-left:4px" onclick="event.stopPropagation();document.getElementById('imodal').classList.add('show')">i</button></span>
+        <span class="ph-chevron" id="ph-chev">▼</span>
+      </div>
+    </div>
     <div class="hdr">
       <div class="hdr-l">
         <div class="hdr-title">Goa Board Results 2026</div>
@@ -732,6 +774,17 @@ document.getElementById('d-overlay').onclick=closeDrawer;
 })();
 
 // ── BOOT ─────────────────────────────────────────────────────────
+// ── MOBILE PANEL TOGGLE ──────────────────────────────────────────
+let panelOpen=true;
+function togglePanel(){
+  panelOpen=!panelOpen;
+  const col=document.getElementById('data-col');
+  col.classList.toggle('panel-collapsed',!panelOpen);
+  document.getElementById('ph-chev').textContent=panelOpen?'▼':'▲';
+  // give map a moment then re-render to fill new visible area
+  setTimeout(()=>map&&map.invalidateSize(),360);
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   initMap();
   renderOverview();
